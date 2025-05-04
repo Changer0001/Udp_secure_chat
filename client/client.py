@@ -9,7 +9,7 @@ from secure_crypto.rsa_utils import generate_rsa_keypair, rsa_decrypt
 from secure_crypto.aes_utils import aes_encrypt, aes_decrypt
 from secure_crypto.hmac_utils import verify_hmac,generate_hmac  # Import verify_hmac from the appropriate module
 def get_input(stdscr, y, x, max_length):
-    curses.echo()
+    curses.noecho()
     stdscr.move(y, x)
     stdscr.refresh()
     input_str = ''
@@ -69,7 +69,7 @@ def start_client(stdscr,server_host='localhost', server_port=9999):
         message_with_timestamp = f"{message}|{timestamp}"
         encrypted_message = aes_encrypt(aes_key, message_with_timestamp)
         message_hmac = generate_hmac(aes_key, message_with_timestamp)
-        print(f"Encrypted message: {encrypted_message}")
+        #print(f"Encrypted message: {encrypted_message}")
         client_socket.sendto(f"{encrypted_message}|{message_hmac}".encode(), (server_host, server_port))
 
     client_socket.close()
