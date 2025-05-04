@@ -6,9 +6,12 @@ import socket
 import base64
 import time
 import curses
+import logging
 from secure_crypto.rsa_utils import generate_rsa_keypair, rsa_decrypt
 from secure_crypto.aes_utils import aes_encrypt, aes_decrypt
 from secure_crypto.hmac_utils import verify_hmac,generate_hmac  # Import verify_hmac from the appropriate module
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def get_input(stdscr, y, x, max_length):
     curses.noecho()
@@ -30,7 +33,7 @@ def get_input(stdscr, y, x, max_length):
             stdscr.addch(ch)
     curses.noecho()
     return input_str
-    
+
 def start_client(stdscr, server_host='localhost', server_port=9999):
     curses.curs_set(1)  # Show the cursor
     stdscr.clear()
@@ -38,6 +41,7 @@ def start_client(stdscr, server_host='localhost', server_port=9999):
     stdscr.refresh()
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client_socket.settimeout(2)  # Set a timeout for receiving ACKs
 
     # Generate RSA keys
     private_key, public_key = generate_rsa_keypair()
@@ -53,7 +57,7 @@ def start_client(stdscr, server_host='localhost', server_port=9999):
     stdscr.addstr(0, 0, "Secure connection established. Type 'q' to quit")
     stdscr.refresh()
 
-    print("Secure connection established. You can start sending messages.")
+    logging.info("Secure connection established. You can start sending messages.")
 
     while True:
         stdscr.addstr(2, 0, "Enter message: ")
@@ -87,7 +91,28 @@ def start_client(stdscr, server_host='localhost', server_port=9999):
         message_hmac_b64 = base64.b64encode(message_hmac).decode('utf-8')
 
         # Send the Base64 encoded encrypted message and HMAC to server
-        client_socket.sendto(f"{encrypted_message_b64}|{message_hmac_b64}".encode(), (server_host, server_port))
+        message_to_send = f"{encrypted_message_b64}|{message_hmac_b64}".encode()
+
+        ack_received = False
+        attempts = 0
+        while not ack_received and attempts < 5:  # Retry up to 5 times
+            logging.info(f"Attempting to send message: {message_with_timestamp} (Attempt {attempts + 1})")
+            client_socket.sendto(message_to_send, (server_host, server_port))
+            try:
+                # Wait for ACK
+                ack, _ = client_socket.recvfrom(4096)
+                if ack.decode() == "ACK":
+                    ack_received = True
+                    logging.info("Message acknowledged by server.")
+                else:
+                    logging.warning(f"Unexpected response: {ack.decode()}")
+            except socket.timeout:
+                logging.warning(f"No ACK received. Retrying... (Attempt {attempts + 1})")
+                attempts += 1
+
+        if not ack_received:
+            logging.error("Failed to receive ACK after 5 attempts. Message not sent.")
+            break
 
     client_socket.close()
 

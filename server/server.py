@@ -6,11 +6,14 @@ import socket
 import threading
 import base64
 import curses
+import logging
 from secure_crypto.rsa_utils import rsa_encrypt
 from secure_crypto.aes_utils import aes_decrypt, aes_encrypt  # Import aes_encrypt and aes_decrypt from the appropriate module
 from secure_crypto.hmac_utils import verify_hmac  # Import verify_hmac from the appropriate module
 from Crypto.Random import get_random_bytes
 from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 clients = {}
 
@@ -40,10 +43,14 @@ def handle_client(stdscr, server_socket, addr, data):
                 stdscr.clear()
                 stdscr.addstr(0, 0, f"Received message from {addr}: {message}")
                 stdscr.refresh()
+                # Broadcast to all other clients
                 for client_addr, client_aes_key in clients.items():
                     if client_addr != addr:
                         encrypted_message = aes_encrypt(client_aes_key, decrypted_message)
                         server_socket.sendto(encrypted_message.encode(), client_addr)
+                # Send ACK back to the client
+                server_socket.sendto("ACK".encode(), addr)
+                logging.info(f"Message from {addr} processed and ACK sent.")
             else:
                 stdscr.addstr(1, 0, f"Message from {addr} failed HMAC verification or is outdated.")
                 stdscr.refresh()
