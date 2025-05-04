@@ -3,11 +3,13 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import socket
+import base64
 import time
 import curses
 from secure_crypto.rsa_utils import generate_rsa_keypair, rsa_decrypt
 from secure_crypto.aes_utils import aes_encrypt, aes_decrypt
 from secure_crypto.hmac_utils import verify_hmac,generate_hmac  # Import verify_hmac from the appropriate module
+
 def get_input(stdscr, y, x, max_length):
     curses.noecho()
     stdscr.move(y, x)
@@ -29,8 +31,7 @@ def get_input(stdscr, y, x, max_length):
     curses.noecho()
     return input_str
     
-def start_client(stdscr,server_host='localhost', server_port=9999):
-    
+def start_client(stdscr, server_host='localhost', server_port=9999):
     curses.curs_set(1)  # Show the cursor
     stdscr.clear()
     stdscr.addstr(0, 0, "Secure connection established. Type 'q' to quit")
@@ -61,19 +62,34 @@ def start_client(stdscr,server_host='localhost', server_port=9999):
         message = get_input(stdscr, 2, 15, 100)
         if message.lower() == 'q':
             break
-        # Process the message as needed
+
         stdscr.addstr(4, 0, f"Sent: {message}")
         stdscr.clrtoeol()
         stdscr.refresh()
+
         timestamp = str(int(time.time()))
         message_with_timestamp = f"{message}|{timestamp}"
+
+        # Encrypt the message and HMAC
         encrypted_message = aes_encrypt(aes_key, message_with_timestamp)
         message_hmac = generate_hmac(aes_key, message_with_timestamp)
-        #print(f"Encrypted message: {encrypted_message}")
-        client_socket.sendto(f"{encrypted_message}|{message_hmac}".encode(), (server_host, server_port))
+
+        # Ensure encrypted_message is in bytes
+        if isinstance(encrypted_message, str):
+            encrypted_message = encrypted_message.encode('utf-8')
+
+        # Ensure message_hmac is in bytes before base64 encoding
+        if isinstance(message_hmac, str):
+            message_hmac = message_hmac.encode('utf-8')
+
+        # Base64 encode the encrypted message and HMAC before sending
+        encrypted_message_b64 = base64.b64encode(encrypted_message).decode('utf-8')
+        message_hmac_b64 = base64.b64encode(message_hmac).decode('utf-8')
+
+        # Send the Base64 encoded encrypted message and HMAC to server
+        client_socket.sendto(f"{encrypted_message_b64}|{message_hmac_b64}".encode(), (server_host, server_port))
 
     client_socket.close()
-
 
 if __name__ == "__main__":
     curses.wrapper(start_client)

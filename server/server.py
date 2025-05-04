@@ -12,7 +12,7 @@ from secure_crypto.hmac_utils import verify_hmac  # Import verify_hmac from the 
 from Crypto.Random import get_random_bytes
 from datetime import datetime, timedelta
 
-clients = {}  # Stores client address and their AES keys
+clients = {}
 
 def is_recent(timestamp):
     message_time = datetime.fromtimestamp(int(timestamp))
@@ -29,6 +29,11 @@ def handle_client(stdscr, server_socket, addr, data):
         aes_key = clients[addr]
         try:
             encrypted_message, received_hmac = data.split(b"|")
+
+            # Base64 decode the message and HMAC
+            encrypted_message = base64.b64decode(encrypted_message)
+            received_hmac = base64.b64decode(received_hmac)
+
             decrypted_message = aes_decrypt(aes_key, encrypted_message.decode())
             message, timestamp = decrypted_message.rsplit("|", 1)
             if verify_hmac(aes_key, decrypted_message, received_hmac.decode()) and is_recent(timestamp):
