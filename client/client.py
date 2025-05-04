@@ -1,25 +1,79 @@
-from secure_crypto.rsa_utils import generate_rsa_keypair, rsa_encrypt, rsa_decrypt
-from secure_crypto.aes_utils import aes_encrypt, aes_decrypt
-from secure_crypto.hmac_utils import generate_hmac, verify_hmac
+# client.py
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import socket
+import time
+import curses
+from secure_crypto.rsa_utils import generate_rsa_keypair, rsa_decrypt
+from secure_crypto.aes_utils import aes_encrypt, aes_decrypt
+from secure_crypto.hmac_utils import verify_hmac,generate_hmac  # Import verify_hmac from the appropriate module
+def get_input(stdscr, y, x, max_length):
+    curses.echo()
+    stdscr.move(y, x)
+    stdscr.refresh()
+    input_str = ''
+    while True:
+        ch = stdscr.getch()
+        if ch in (curses.KEY_ENTER, 10, 13):  # Enter key
+            break
+        elif ch in (curses.KEY_BACKSPACE, 127, 8):
+            if len(input_str) > 0:
+                input_str = input_str[:-1]
+                yx = stdscr.getyx()
+                stdscr.move(yx[0], yx[1] - 1)
+                stdscr.delch()
+        elif 0 <= ch <= 255 and len(input_str) < max_length:
+            input_str += chr(ch)
+            stdscr.addch(ch)
+    curses.noecho()
+    return input_str
+    
+def start_client(stdscr,server_host='localhost', server_port=9999):
+    
+    curses.curs_set(1)  # Show the cursor
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Secure connection established. Type 'q' to quit")
+    stdscr.refresh()
 
-def start_client(server_host='localhost', server_port=9999):
-    # Create UDP socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    print(f"💬 Sending messages to {server_host}:{server_port}")
-    print("✏️ Type your message and press Enter. Type 'exit' to quit.")
+    # Generate RSA keys
+    private_key, public_key = generate_rsa_keypair()
+
+    # Send public key to server
+    client_socket.sendto(public_key, (server_host, server_port))
+
+    # Receive encrypted AES key from server
+    encrypted_aes_key, _ = client_socket.recvfrom(4096)
+    aes_key = rsa_decrypt(private_key, encrypted_aes_key)
+
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Secure connection established. Type 'q' to quit")
+    stdscr.refresh()
+
+    print("Secure connection established. You can start sending messages.")
 
     while True:
-        message = input("> ")
-        if message.lower() == 'exit':
+        stdscr.addstr(2, 0, "Enter message: ")
+        stdscr.clrtoeol()
+        stdscr.refresh()
+        message = get_input(stdscr, 2, 15, 100)
+        if message.lower() == 'q':
             break
-
-        # Send message to server
-        client_socket.sendto(message.encode(), (server_host, server_port))
+        # Process the message as needed
+        stdscr.addstr(4, 0, f"Sent: {message}")
+        stdscr.clrtoeol()
+        stdscr.refresh()
+        timestamp = str(int(time.time()))
+        message_with_timestamp = f"{message}|{timestamp}"
+        encrypted_message = aes_encrypt(aes_key, message_with_timestamp)
+        message_hmac = generate_hmac(aes_key, message_with_timestamp)
+        print(f"Encrypted message: {encrypted_message}")
+        client_socket.sendto(f"{encrypted_message}|{message_hmac}".encode(), (server_host, server_port))
 
     client_socket.close()
-    print("👋 Client closed.")
+
 
 if __name__ == "__main__":
-    start_client()
+    curses.wrapper(start_client)

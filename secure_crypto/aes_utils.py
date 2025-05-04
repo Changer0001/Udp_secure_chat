@@ -1,6 +1,6 @@
-from secure_crypto.Cipher import AES
-from secure_crypto.Random import get_random_bytes
-from secure_crypto.Util.Padding import pad, unpad
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
 import base64
 
 def aes_encrypt(aes_key, plaintext):

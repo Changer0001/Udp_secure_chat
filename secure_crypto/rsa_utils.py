@@ -1,5 +1,5 @@
-from secure_crypto.PublicKey import RSA
-from secure_crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
 
 def generate_rsa_keypair():
     key = RSA.generate(2048)
