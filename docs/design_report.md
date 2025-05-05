@@ -1,7 +1,7 @@
 
 ---
 
-## **design_report.md (1–2 Page Report)**
+## 📄 **design_report.md (1–2 Page Report)**
 
 ```markdown
 # Graduate Report: Secure UDP Chat System
@@ -10,9 +10,13 @@
 **Assignment:** Secure UDP Client-Server Chat  
 **Date:** May 2025
 
+---
+
 ## Implementation Overview
 
 The chat system was implemented using Python’s `socket`, `Crypto`, `base64`, `hmac`, and `curses` libraries. UDP was chosen for message transport, and security was ensured through a hybrid cryptosystem combining RSA and AES.
+
+---
 
 ## Cryptographic Design Decisions
 
@@ -25,9 +29,13 @@ AES in CBC mode was selected for encrypting chat messages due to its strong secu
 ### 3. Message Integrity & Authentication
 HMAC-SHA256 is computed over the AES ciphertext and the ISO-formatted UTC timestamp. This provides integrity and guards against tampering. The server verifies the HMAC and ensures the timestamp is within a 5-minute validity window.
 
+---
+
 ## Reliable Communication over UDP
 
 UDP does not guarantee delivery, so a simple acknowledgment (ACK) mechanism was implemented. Clients wait up to 2 seconds for an ACK and retry sending messages up to 3 times if it is not received. While basic, this introduces some level of reliability without switching to TCP.
+
+---
 
 ## Design Trade-offs and Considerations
 
@@ -38,6 +46,11 @@ UDP does not guarantee delivery, so a simple acknowledgment (ACK) mechanism was 
 - **No forward secrecy** is implemented; compromising the AES key would expose prior messages.
 - **UI implementation** using `curses` provides real-time interaction but limits the application to compatible terminals.
 
+---
 
+## Future Improvements
 
-
+- Use TLS over UDP (e.g., DTLS) for more robust security.
+- Add user authentication (e.g., password + public key).
+- Store keys securely using a local keystore.
+- Add support for file transfer or media messages.
