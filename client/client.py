@@ -1,4 +1,12 @@
-# client.py
+"""
+client.py
+
+This module implements the client-side logic for a secure UDP chat application.
+It handles encryption (RSA for key exchange, AES for messages), HMAC authentication,
+and a terminal UI using the `curses` library.
+
+Author: Burak Yilmaz
+"""
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -14,6 +22,18 @@ from secure_crypto.hmac_utils import verify_hmac,generate_hmac  # Import verify_
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def get_input(stdscr, y, x, max_length):
+    """
+    Get user input from the terminal using curses.
+
+    Args:
+        stdscr: curses window object.
+        y (int): Y-position to begin input.
+        x (int): X-position to begin input.
+        max_length (int): Maximum input length allowed.
+
+    Returns:
+        str: The input string entered by the user.
+    """
     curses.noecho()
     stdscr.move(y, x)
     stdscr.refresh()
@@ -35,6 +55,23 @@ def get_input(stdscr, y, x, max_length):
     return input_str
 
 def start_client(stdscr, server_host='localhost', server_port=9999):
+    """
+    Start the secure UDP client.
+
+    This function:
+    - Establishes a connection to the server.
+    - Performs RSA key exchange to securely share an AES key.
+    - Accepts user input via curses.
+    - Encrypts and HMAC-authenticates each message.
+    - Sends the encrypted message + HMAC to the server.
+    - Waits for an ACK (acknowledgment) from the server.
+    - Retries if ACK is not received.
+
+    Args:
+        stdscr: curses screen object (passed automatically by curses.wrapper).
+        server_host (str): The hostname or IP address of the server.
+        server_port (int): The port number the server is listening on.
+    """
     curses.curs_set(1)  # Show the cursor
     stdscr.clear()
     stdscr.addstr(0, 0, "Secure connection established. Type 'q' to quit")
@@ -117,4 +154,9 @@ def start_client(stdscr, server_host='localhost', server_port=9999):
     client_socket.close()
 
 if __name__ == "__main__":
+    """
+    Entry point for the client application.
+
+    Wraps the `start_client` function in a curses context.
+    """
     curses.wrapper(start_client)
