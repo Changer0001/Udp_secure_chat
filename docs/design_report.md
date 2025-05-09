@@ -3,7 +3,7 @@
 **Name:** Burak Yilmaz  
 **Course:** COMPE 560  
 **Assignment:** Secure UDP Client-Server Chat  
-**Date:** May 2025
+**Date:** 5 May 2025
 
 ---
 
