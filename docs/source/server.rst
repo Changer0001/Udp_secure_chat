@@ -1,7 +1,7 @@
-Client Module
+Server Module
 =============
 
-.. automodule:: client.client
+.. automodule:: server.server
    :members:
    :undoc-members:
    :show-inheritance:

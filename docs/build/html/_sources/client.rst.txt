@@ -1,2 +1,7 @@
-.. automodule:: udp_secure_chat.client.client  # Explicit import for client.py
+Client Module
+=============
+
+.. automodule:: client.client
    :members:
+   :undoc-members:
+   :show-inheritance:

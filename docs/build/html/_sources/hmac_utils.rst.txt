@@ -1,7 +1,7 @@
-Client Module
+HMAC Module
 =============
 
-.. automodule:: client.client
+.. automodule:: secure_crypto.hmac_utils
    :members:
    :undoc-members:
    :show-inheritance:

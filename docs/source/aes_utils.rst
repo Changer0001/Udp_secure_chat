@@ -1,7 +1,7 @@
-Client Module
+AES Module
 =============
 
-.. automodule:: client.client
+.. automodule:: secure_crypto.aes_utils
    :members:
    :undoc-members:
    :show-inheritance:
